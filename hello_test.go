@@ -1,42 +1,32 @@
 package main
 
-import "testing"
-
-func assertCorrectMessage(t *testing.T, got string, want string) {
-	if got != want {
-		t.Errorf("got %q want %q", got, want)
-	}
-}
+import (
+	"testing"
+)
 
 func TestHello(t *testing.T) {
-	t.Run("saying hello to people", func(t *testing.T) {
-		got := Hello("Chris", "English")
-		want := "Hello, Chris"
-		assertCorrectMessage(t, got, want)
-	})
-	t.Run("say 'Hello, World' when an empty string is supplied", func(t *testing.T) {
-		got := Hello("", "")
-		want := "Hello, World"
-		assertCorrectMessage(t, got, want)
-	})
-	t.Run("Say 'Hola, Chris' in Spanish", func(t *testing.T) {
-		got := Hello("Chris", "Spanish")
-		want := "Hola, Chris"
-		assertCorrectMessage(t, got, want)
-	})
-	t.Run("Say hola everyone in Spanish", func(t *testing.T) {
-		got := Hello("", "Spanish")
-		want := "Hola, World"
-		assertCorrectMessage(t, got, want)
-	})
-	t.Run("Say Bonjor to everyone French", func(t *testing.T) {
-		got := Hello("", "French")
-		want := "Bonjor, World"
-		assertCorrectMessage(t, got, want)
-	})
-	t.Run("Say 'Bonjor, Chris'", func(t *testing.T) {
-		got := Hello("Chris", "French")
-		want := "Bonjor, Chris"
-		assertCorrectMessage(t, got, want)
-	})
+
+	helloTest := []struct {
+		name  string
+		hello string
+		want  string
+	}{
+		{name: "hello everyone default english", hello: Hello("", ""), want: "Hello, World"},
+		{name: "hello chris english", hello: Hello("Chris", "English"), want: "Hello, Chris"},
+		{name: "hello everyone english", hello: Hello("", "English"), want: "Hello, World"},
+		{name: "hello chris spanish", hello: Hello("Chris", "Spanish"), want: "Hola, Chris"},
+		{name: "hello everyone spanish", hello: Hello("", "Spanish"), want: "Hola, World"},
+		{name: "hello chris french", hello: Hello("Chris", "French"), want: "Bonjor, Chris"},
+		{name: "hello everyone french", hello: Hello("", "French"), want: "Bonjor, World"},
+	}
+
+	for _, tt := range helloTest {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.hello
+			if got != tt.want {
+				t.Errorf("%#v got %q want %q", tt.hello, got, tt.want)
+			}
+		})
+	}
+
 }
