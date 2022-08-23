@@ -2,24 +2,31 @@ package racer
 
 import (
 	"net/http"
-	"time"
 )
 
-func websitePinger(url string, out chan time.Duration) {
-	start := time.Now()
-	http.Get(url)
-	out <- time.Since(start)
+func websitePing(url string) chan struct{} {
+	ch := make(chan struct{})
+
+	go func() {
+		_, err := http.Get(url)
+		if err == nil {
+			close(ch)
+		}
+	}()
+	return ch
 }
 
-func Racer(a, b string) string {
-	chanA := make(chan time.Duration)
-	chanB := make(chan time.Duration)
+func Racer(a, b string) (winner string, error error) {
+	// We don't care for the return value of websitePing
+	// We just care that it closes the channel, which triggers
+	// the `select` statement and executes the code below it.
+	// First to return is executed
 
-	go func() { websitePinger(a, chanA) }()
-	go func() { websitePinger(b, chanB) }()
-
-	if <-chanA < <-chanB {
-		return a
+	select {
+	case <-websitePing(a):
+		return a, nil
+	case <-websitePing(b):
+		return b, nil
 	}
-	return b
+	return "", nil
 }

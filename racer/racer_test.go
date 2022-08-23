@@ -24,7 +24,11 @@ func TestRacer(t *testing.T) {
 
 	t.Run("test fast vs slow server", func(t *testing.T) {
 		want := fastServer.URL
-		got := Racer(slowServer.URL, fastServer.URL)
+		got, err := Racer(slowServer.URL, fastServer.URL)
+
+		if err != nil {
+			t.Errorf("got an error when not expecting one")
+		}
 
 		if got != want {
 			t.Errorf("got %q want %q", got, want)
