@@ -18,6 +18,8 @@ func TestRacer(t *testing.T) {
 	slowServer := makeDelayedServer(20 * time.Millisecond)
 	fastServer := makeDelayedServer(0)
 
+	testTimeout := 1 * time.Second
+
 	// `defer` calls the function at the end of the containing function
 	defer slowServer.Close()
 	defer fastServer.Close()
@@ -32,6 +34,14 @@ func TestRacer(t *testing.T) {
 
 		if got != want {
 			t.Errorf("got %q want %q", got, want)
+		}
+	})
+
+	t.Run("test that testTimeout causes error", func(t *testing.T) {
+		_, err := ConfigurableRacer("http://localhost:1", "http://localhost:2", testTimeout)
+
+		if err == nil {
+			t.Errorf("expected to get error %s but got nil ", err)
 		}
 	})
 }

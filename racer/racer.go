@@ -1,7 +1,9 @@
 package racer
 
 import (
+	"fmt"
 	"net/http"
+	"time"
 )
 
 func websitePing(url string) chan struct{} {
@@ -16,7 +18,9 @@ func websitePing(url string) chan struct{} {
 	return ch
 }
 
-func Racer(a, b string) (winner string, error error) {
+var timeout = 10 * time.Second
+
+func ConfigurableRacer(a, b string, timeout time.Duration) (winner string, error error) {
 	// We don't care for the return value of websitePing
 	// We just care that it closes the channel, which triggers
 	// the `select` statement and executes the code below it.
@@ -27,6 +31,11 @@ func Racer(a, b string) (winner string, error error) {
 		return a, nil
 	case <-websitePing(b):
 		return b, nil
+	case <-time.After(timeout):
+		return "", fmt.Errorf("timed out after trying to get '%s' and '%s'", a, b)
 	}
-	return "", nil
+}
+
+func Racer(a, b string) (winner string, error error) {
+	return ConfigurableRacer(a, b, timeout)
 }
