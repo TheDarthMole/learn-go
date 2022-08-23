@@ -24,10 +24,16 @@ func (d *DefaultOut) Write(out io.Writer) {
 
 func Countdown(out io.Writer, sleeper Sleeper) {
 	for i := 3; i > 0; i-- {
-		fmt.Fprintln(out, i)
+		_, err := fmt.Fprintln(out, i)
+		if err != nil {
+			return
+		}
 		sleeper.Sleep(1 * time.Second)
 	}
-	fmt.Fprint(out, "Go!")
+	_, err := fmt.Fprint(out, "Go!")
+	if err != nil {
+		return
+	}
 }
 
 var sleeper = &DefaultSleeper{}
