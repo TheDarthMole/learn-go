@@ -18,10 +18,6 @@ func (d *DefaultSleeper) Sleep(ms time.Duration) {
 	time.Sleep(ms * time.Second)
 }
 
-func (d *DefaultOut) Write(out io.Writer) {
-
-}
-
 func Countdown(out io.Writer, sleeper Sleeper) {
 	for i := 3; i > 0; i-- {
 		_, err := fmt.Fprintln(out, i)
