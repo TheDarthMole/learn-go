@@ -7,25 +7,36 @@ import (
 func walk(x interface{}, fn func(input string)) {
 	val := getValue(x)
 
-	if val.Kind() == reflect.Slice {
+	walkValue := func(value reflect.Value) {
+		walk(value.Interface(), fn)
+	}
+
+	switch val.Kind() {
+	case reflect.String:
+		fn(val.String())
+	case reflect.Struct:
+		for i := 0; i < val.NumField(); i++ {
+			walkValue(val.Field(i))
+		}
+	case reflect.Slice, reflect.Array:
 		for i := 0; i < val.Len(); i++ {
-			walk(val.Index(i).Interface(), fn)
+			walkValue(val.Index(i))
 		}
-		return
+	case reflect.Map:
+		for _, x := range val.MapKeys() {
+			walkValue(val.MapIndex(x))
+		}
+	case reflect.Chan:
+		for v, ok := val.Recv(); ok; v, ok = val.Recv() {
+			walkValue(v)
+		}
+	case reflect.Func:
+		valFnResult := val.Call(nil)
+		for _, res := range valFnResult {
+			walkValue(res)
+		}
 	}
 
-	for i := 0; i < val.NumField(); i++ {
-		field := val.Field(i)
-
-		switch field.Kind() {
-		case reflect.String:
-			// Ensure that we only try to convert strings
-			fn(field.String())
-		case reflect.Struct:
-			// Recurse for nested structs
-			walk(field.Interface(), fn)
-		}
-	}
 }
 
 func getValue(x interface{}) reflect.Value {
