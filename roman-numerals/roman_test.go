@@ -8,7 +8,7 @@ import (
 )
 
 var cases = []struct {
-	Arabic int
+	Arabic uint16
 	Roman  string
 }{
 	{1, "I"},
@@ -60,7 +60,7 @@ func TestConvertToArabic(t *testing.T) {
 }
 
 func TestPropertiesOfConversion(t *testing.T) {
-	assertion := func(arabic int) bool {
+	assertion := func(arabic uint16) bool {
 		if arabic > 3999 {
 			return true
 		}
@@ -71,7 +71,7 @@ func TestPropertiesOfConversion(t *testing.T) {
 		return fromRoman == arabic
 	}
 
-	if err := quick.Check(assertion, nil); err != nil {
+	if err := quick.Check(assertion, &quick.Config{}); err != nil {
 		t.Error("failed checks", err)
 	}
 }

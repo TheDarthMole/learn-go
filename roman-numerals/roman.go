@@ -6,7 +6,7 @@ import (
 )
 
 type RomanArabicPair struct {
-	Arabic int
+	Arabic uint16
 	Roman  string
 }
 
@@ -44,7 +44,7 @@ func (r RomanNumerals) Exists(symbols ...byte) bool {
 	return false
 }
 
-func ConvertToRoman(arabic int) string {
+func ConvertToRoman(arabic uint16) string {
 	var result = strings.Builder{}
 
 	for _, pair := range romanArabicLookupTable {
@@ -57,7 +57,7 @@ func ConvertToRoman(arabic int) string {
 	return result.String()
 }
 
-func (r RomanNumerals) ValueOf(symbols ...byte) int {
+func (r RomanNumerals) ValueOf(symbols ...byte) uint16 {
 	for _, s := range romanArabicLookupTable {
 		if s.Roman == string(symbols) {
 			return s.Arabic
@@ -66,7 +66,7 @@ func (r RomanNumerals) ValueOf(symbols ...byte) int {
 	return 0
 }
 
-func ConvertToArabic(roman string) (total int) {
+func ConvertToArabic(roman string) (total uint16) {
 	for _, symbols := range windowedRoman(roman).Symbols() {
 		total += romanArabicLookupTable.ValueOf(symbols...)
 	}
