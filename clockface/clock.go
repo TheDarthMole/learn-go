@@ -3,6 +3,7 @@ package clockface
 import (
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"time"
 )
@@ -77,24 +78,42 @@ func makeHand(p Point, length float64) Point {
 
 func secondHand(w io.Writer, t time.Time) {
 	p := makeHand(secondHandPoint(t), secondHandLength)
-	fmt.Fprintf(w, `<line x1="150" y1="150" x2="%.3f" y2="%.3f" style="fill:none;stroke:#f00;stroke-width:3px;"/>`, p.X, p.Y)
+	_, err := fmt.Fprintf(w, `<line x1="150" y1="150" x2="%.3f" y2="%.3f" style="fill:none;stroke:#f00;stroke-width:3px;"/>`, p.X, p.Y)
+	if err != nil {
+		log.Panicf("error printing to the writer: %s", err)
+	}
 }
 
 func minuteHand(w io.Writer, t time.Time) {
 	p := makeHand(minuteHandPoint(t), minuteHandLength)
-	fmt.Fprintf(w, `<line x1="150" y1="150" x2="%.3f" y2="%.3f" style="fill:none;stroke:#000;stroke-width:3px;"/>`, p.X, p.Y)
+	_, err := fmt.Fprintf(w, `<line x1="150" y1="150" x2="%.3f" y2="%.3f" style="fill:none;stroke:#000;stroke-width:3px;"/>`, p.X, p.Y)
+	if err != nil {
+		log.Panicf("error printing to the writer: %s", err)
+	}
 }
 
 func hourHand(w io.Writer, t time.Time) {
 	p := makeHand(hourHandPoint(t), hourHandLength)
-	fmt.Fprintf(w, `<line x1="150" y1="150" x2="%.3f" y2="%.3f" style="fill:none;stroke:#000;stroke-width:3px;"/>`, p.X, p.Y)
+	_, err := fmt.Fprintf(w, `<line x1="150" y1="150" x2="%.3f" y2="%.3f" style="fill:none;stroke:#000;stroke-width:3px;"/>`, p.X, p.Y)
+	if err != nil {
+		log.Panicf("error printing to the writer: %s", err)
+	}
 }
 
-func SVGWriter(output io.Writer, t time.Time) {
-	io.WriteString(output, svgStart)
-	io.WriteString(output, bezel)
-	secondHand(output, t)
-	minuteHand(output, t)
-	hourHand(output, t)
-	io.WriteString(output, svgEnd)
+func SVGWriter(w io.Writer, t time.Time) {
+	_, err := io.WriteString(w, svgStart)
+	if err != nil {
+		log.Panicf("error printing to the writer: %s", err)
+	}
+	_, err = io.WriteString(w, bezel)
+	if err != nil {
+		log.Panicf("error printing to the writer: %s", err)
+	}
+	secondHand(w, t)
+	minuteHand(w, t)
+	hourHand(w, t)
+	_, err = io.WriteString(w, svgEnd)
+	if err != nil {
+		log.Panicf("error printing to the writer: %s", err)
+	}
 }
