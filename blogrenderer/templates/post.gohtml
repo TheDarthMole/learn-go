@@ -1,0 +1,7 @@
+{{template "top" .}}
+<h1>{{.Post.Title}}</h1>
+
+<p>{{.Post.Description}}</p>
+{{.HTMLBody}}
+Tags: <ul>{{range .Post.Tags}}<li>{{.}}</li>{{end}}</ul>
+{{template "bottom" .}}
