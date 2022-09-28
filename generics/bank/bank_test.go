@@ -7,8 +7,8 @@ import (
 var (
 	nick    = Person{Name: "Nick", Address: Address{}, NINo: "PE1337"}
 	luke    = Person{Name: "Luke", Address: Address{}, NINo: "PE101337"}
-	nickAcc = Account{Owners: []Person{nick}, InitialBalance: 500}
-	lukeAcc = Account{Owners: []Person{luke}, InitialBalance: 550}
+	nickAcc = NewAccount([]Person{nick}, 500)
+	lukeAcc = NewAccount([]Person{luke}, 550)
 )
 
 func TestAccount_Send(t *testing.T) {
@@ -83,20 +83,13 @@ func TestAccount_IsJointAccount(t *testing.T) {
 		person1 := Person{}
 		person2 := Person{}
 
-		account := Account{
-			Owners:         []Person{person1, person2},
-			InitialBalance: 1337,
-		}
+		account := NewAccount([]Person{person1, person2}, 1337)
 
 		AssertEqual(t, account.IsJointAccount(), true, "account has two people, should be joint account")
 	})
 
 	t.Run("no person account", func(t *testing.T) {
-		account := Account{
-			Owners:         nil,
-			InitialBalance: 0,
-		}
-
+		account := NewAccount(nil, 1337)
 		AssertEqual(t, account.IsJointAccount(), false, "no people own this account")
 	})
 
@@ -107,7 +100,7 @@ func TestAccount_IsContact(t *testing.T) {
 	lukeAcc.resetContacts()
 
 	t.Run("is a contact", func(t *testing.T) {
-		nickAcc.Contacts = []Account{lukeAcc}
+		nickAcc.contacts = []Account{lukeAcc}
 		AssertEqual(t, nickAcc.IsContact(lukeAcc), true, "Luke was added as a contact to Nick")
 	})
 
@@ -124,6 +117,29 @@ func TestAccount_AddContact(t *testing.T) {
 		AssertEqual(t, nickAcc.IsContact(lukeAcc), false, "Luke should not be in contacts list after resetting contacts")
 		nickAcc.AddContact(&lukeAcc)
 		AssertEqual(t, nickAcc.IsContact(lukeAcc), true, "After adding as contact, should be in contacts list")
+	})
+}
+
+func TestAccount_RemoveContact(t *testing.T) {
+	nickAcc.resetContacts()
+	lukeAcc.resetContacts()
+
+	t.Run("removing from empty contacts", func(t *testing.T) {
+		AssertEqual(t, len(nickAcc.Contacts()), 0, "Contacts should be empty")
+		if err := nickAcc.RemoveContact(lukeAcc); err == nil {
+			t.Errorf("wanted to get an error for removing contact when not exists: %s", err)
+		}
+		AssertEqual(t, len(nickAcc.Contacts()), 0, "Contacts should be empty")
+	})
+
+	t.Run("adding contact and removing", func(t *testing.T) {
+		nickAcc.AddContact(&lukeAcc)
+		AssertEqual(t, nickAcc.IsContact(lukeAcc), true, "should be a contact")
+		if err := nickAcc.RemoveContact(lukeAcc); err != nil {
+			t.Errorf("got an error when removing a contact: %s", err)
+		}
+
+		AssertEqual(t, nickAcc.IsContact(lukeAcc), false, "luke should have been removed as a contact")
 	})
 }
 

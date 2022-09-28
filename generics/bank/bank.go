@@ -1,6 +1,9 @@
 package bank
 
-import "reflect"
+import (
+	"errors"
+	"reflect"
+)
 
 type Person struct {
 	Name    string
@@ -17,9 +20,9 @@ type Address struct {
 }
 
 type Account struct {
-	Owners         []Person
-	InitialBalance float64
-	Contacts       []Account
+	owners         []Person
+	initialBalance float64
+	contacts       []Account
 }
 
 type Transaction struct {
@@ -51,6 +54,23 @@ func Find[A any](items []A, predicate func(A) bool) (value A, found bool) {
 	return
 }
 
+func Filter[A any](items []A, predicate func(A) bool) (filtered []A) {
+	for _, v := range items {
+		if predicate(v) {
+			filtered = append(filtered, v)
+		}
+	}
+	return
+}
+
+func NewAccount(owner []Person, initialBalance float64) Account {
+	return Account{
+		owners:         owner,
+		initialBalance: initialBalance,
+		contacts:       nil,
+	}
+}
+
 func (l *Ledger) reset() {
 	l.Ledger = make([]Transaction, 0)
 }
@@ -66,11 +86,11 @@ func (a *Account) Balance() float64 {
 		}
 		return currentBalance
 	}
-	return Reduce(transactions.Ledger, accumulator, a.InitialBalance)
+	return Reduce(transactions.Ledger, accumulator, a.initialBalance)
 }
 
 func (a *Account) IsJointAccount() bool {
-	return len(a.Owners) > 1
+	return len(a.owners) > 1
 }
 
 func (a *Account) Send(to *Account, value float64) bool {
@@ -91,17 +111,60 @@ func (a *Account) IsContact(contact Account) bool {
 		return reflect.DeepEqual(p, contact)
 	}
 
-	_, found := Find(a.Contacts, find)
+	_, found := Find(a.contacts, find)
 
 	return found
 }
 
 func (a *Account) AddContact(contact *Account) {
 	if !a.IsContact(*contact) {
-		a.Contacts = append(a.Contacts, *contact)
+		a.contacts = append(a.contacts, *contact)
 	}
 }
 
+func (a *Account) RemoveContact(contact Account) error {
+	oldContacts := a.Contacts()
+	newContacts := Filter(a.contacts, func(p Account) bool {
+		return !reflect.DeepEqual(p, contact)
+	})
+
+	if len(oldContacts) == len(newContacts) {
+		return errors.New("the specified contact was not found")
+	}
+
+	a.contacts = newContacts
+	return nil
+}
+
 func (a *Account) resetContacts() {
-	a.Contacts = make([]Account, 0)
+	a.contacts = make([]Account, 0)
+}
+
+func (a *Account) Contacts() []Account {
+	return a.contacts
+}
+
+func (a *Account) Owners() []Person {
+	return a.owners
+}
+
+func (a *Account) InitialBalance() float64 {
+	return a.initialBalance
+}
+
+func (a *Account) AddOwner(newOwner Person) {
+	a.owners = append(a.owners, newOwner)
+}
+
+func (a *Account) RemoveOwner(remOwner Person) error {
+	oldOwners := a.Owners()
+	newOwners := Filter(a.owners, func(p Person) bool {
+		return !reflect.DeepEqual(remOwner, p)
+	})
+
+	if len(newOwners) == len(oldOwners) {
+		return errors.New("the specified owner was not found")
+	}
+	a.owners = newOwners
+	return nil
 }
