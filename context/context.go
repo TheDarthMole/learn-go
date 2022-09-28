@@ -2,6 +2,7 @@ package context
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -22,7 +23,10 @@ func Server(store Store) http.HandlerFunc {
 
 		select {
 		case d := <-data:
-			fmt.Fprint(writer, d)
+			_, err := fmt.Fprint(writer, d)
+			if err != nil {
+				log.Fatalf("error printing to writer: %+v", err)
+			}
 		case <-ctx.Done():
 			store.Cancel()
 		}

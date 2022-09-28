@@ -14,6 +14,7 @@ type StubStore struct {
 }
 
 func (s *StubStore) Fetch() string {
+	time.Sleep(10 * time.Millisecond)
 	return s.response
 }
 
