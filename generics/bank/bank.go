@@ -93,17 +93,21 @@ func (a *Account) IsJointAccount() bool {
 	return len(a.owners) > 1
 }
 
-func (a *Account) Send(to *Account, value float64) bool {
-	if value > a.Balance() || value < 0 {
-		return false
+func (a *Account) Send(to *Account, value float64) error {
+	if value > a.Balance() {
+		return errors.New("insufficient funds")
 	}
+	if value < 0 {
+		return errors.New("can not send negative balance")
+	}
+
 	trans := Transaction{
 		From: a,
 		To:   to,
 		Sum:  value,
 	}
 	transactions.Ledger = append(transactions.Ledger, trans)
-	return true
+	return nil
 }
 
 func (a *Account) IsContact(contact Account) bool {

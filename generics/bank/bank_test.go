@@ -24,16 +24,18 @@ func TestAccount_Send(t *testing.T) {
 			Sum:  300,
 		}
 
-		success := nickAcc.Send(&lukeAcc, 300)
-		AssertEqual(t, success, true, "transaction should succeed")
+		if err := nickAcc.Send(&lukeAcc, 300); err != nil {
+			t.Errorf("transaction should succeed: %s", err)
+		}
 		AssertEqual(t, len(transactions.Ledger), 1, "there should be one transaction after making a transaction")
 		got := transactions.Ledger[0]
 		AssertEqual(t, got, want, "")
 	})
 
 	t.Run("cant send negative amounts of money", func(t *testing.T) {
-		success := nickAcc.Send(&lukeAcc, -500)
-		AssertEqual(t, success, false, "transaction should fail due to invalid value")
+		if err := nickAcc.Send(&lukeAcc, -500); err == nil {
+			t.Errorf("should give an error for sending negative balance, got: %s", err)
+		}
 		AssertEqual(t, len(transactions.Ledger), 1, "a new transaction should not have been made for an invalid request")
 	})
 
@@ -44,8 +46,9 @@ func TestAccount_Send(t *testing.T) {
 			Sum:  30,
 		}
 		originalBal := nickAcc.Balance()
-		success := nickAcc.Send(&nickAcc, 30)
-		AssertEqual(t, success, true, "should be able to send money to myself")
+		if err := nickAcc.Send(&nickAcc, 30); err != nil {
+			t.Errorf("should be able to send balance to myself: %s", err)
+		}
 		AssertEqual(t, len(transactions.Ledger), 2, "should have created a new transaction0")
 		AssertEqual(t, transactions.Ledger[1], want, "should have a transaction to/from nickAcc")
 		AssertEqual(t, nickAcc.Balance(), originalBal, "balances should be the same")
@@ -56,19 +59,22 @@ func TestAccount_Balance(t *testing.T) {
 	// Reset the ledger
 	transactions.reset()
 
-	success := lukeAcc.Send(&nickAcc, 550)
-	AssertEqual(t, success, true, "expected a successful transfer")
+	if err := lukeAcc.Send(&nickAcc, 550); err != nil {
+		t.Errorf("expected a successful transfer, got: %s", err)
+	}
 	AssertEqual(t, nickAcc.Balance(), 1050, "Balances not added correctly")
 	AssertEqual(t, lukeAcc.Balance(), 0, "Balances not added correctly")
 
-	success = nickAcc.Send(&lukeAcc, 50)
-	AssertEqual(t, success, true, "expected a successful transfer")
+	if err := nickAcc.Send(&lukeAcc, 50); err != nil {
+		t.Errorf("expected a successful transfer, got: %s", err)
+	}
 	AssertEqual(t, nickAcc.Balance(), 1000, "Balances not added correctly")
 	AssertEqual(t, lukeAcc.Balance(), 50, "Balances not added correctly")
 
 	t.Run("cant send more than avaliable funds", func(t *testing.T) {
-		success = lukeAcc.Send(&nickAcc, 5000)
-		AssertEqual(t, success, false, "expected transfer to fail due to insufficient funds")
+		if err := lukeAcc.Send(&nickAcc, 5000); err == nil {
+			t.Errorf("expected transfer to fail due to insufficient funds, got: %s", err)
+		}
 		AssertEqual(t, nickAcc.Balance(), 1000, "expected values not to change")
 		AssertEqual(t, lukeAcc.Balance(), 50, "expected values not to change")
 	})
