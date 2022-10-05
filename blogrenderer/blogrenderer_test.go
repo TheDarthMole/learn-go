@@ -46,6 +46,15 @@ func TestRender(t *testing.T) {
 
 		approvals.VerifyString(t, buf.String())
 	})
+
+	t.Run("can use multiple posts with single PostRenderer", func(t *testing.T) {
+		if err = postRenderer.Render(io.Discard, aPost); err != nil {
+			t.Fatal(err)
+		}
+		if err = postRenderer.Render(io.Discard, aPost); err != nil {
+			t.Fatal(err)
+		}
+	})
 }
 
 func BenchmarkReader(b *testing.B) {
