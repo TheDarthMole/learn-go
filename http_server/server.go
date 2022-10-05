@@ -34,19 +34,21 @@ func (p *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (p *PlayerServer) showScore(w http.ResponseWriter, player string) {
 	p.mu.Lock()
+	defer p.mu.Unlock()
 	score := p.store.GetPlayerScore(player)
-	p.mu.Unlock()
 
 	if score == 0 {
 		w.WriteHeader(http.StatusNotFound)
 	}
-	fmt.Fprint(w, score)
+	_, err := fmt.Fprint(w, score)
+	if err != nil {
+		return
+	}
 }
 
 func (p *PlayerServer) processWin(w http.ResponseWriter, player string) {
 	p.mu.Lock()
+	defer p.mu.Unlock()
 	p.store.RecordWin(player)
-	p.mu.Unlock()
-
 	w.WriteHeader(http.StatusAccepted)
 }
