@@ -50,23 +50,25 @@ func TestRender(t *testing.T) {
 
 func BenchmarkReader(b *testing.B) {
 	var aPost = blogrenderer.Post{
-		Title:       "Hello World!",
-		Body:        "This is a post",
+		Title:       "hello world",
 		Description: "This is a description",
+		Body:        "# Title\n\nbody here",
 		Tags:        []string{"go", "tdd"},
 	}
 
 	b.ResetTimer()
 
-	tmpl, err := blogrenderer.NewPostRenderer()
+	postRenderer, err := blogrenderer.NewPostRenderer()
+
 	if err != nil {
-		b.Fatalf("error getting a valid template from templating engine, err: %s", err.Error())
+		b.Fatal(err)
 	}
 
 	for i := 0; i < b.N; i++ {
-		err = tmpl.Render(io.Discard, aPost)
-		if err != nil {
+
+		if err = postRenderer.Render(io.Discard, aPost); err != nil {
 			b.Fatal(err)
 		}
+
 	}
 }

@@ -13,8 +13,7 @@ import (
 var templates embed.FS
 
 type PostRenderer struct {
-	tmpl     *template.Template
-	mdParser *parser.Parser
+	tmpl *template.Template
 }
 
 type Post struct {
@@ -25,10 +24,7 @@ type Post struct {
 func NewPostRenderer() (*PostRenderer, error) {
 	tmpl, err := template.New("postRenderer").Funcs(
 		template.FuncMap{}).ParseFS(templates, "templates/*.gohtml")
-
-	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
-	parser := parser.NewWithExtensions(extensions)
-	return &PostRenderer{tmpl: tmpl, mdParser: parser}, err
+	return &PostRenderer{tmpl: tmpl}, err
 }
 
 func (p *Post) SanitisedTitle() string {
@@ -36,7 +32,7 @@ func (p *Post) SanitisedTitle() string {
 }
 
 func (r *PostRenderer) Render(w io.Writer, p Post) error {
-	return r.tmpl.ExecuteTemplate(w, "post.gohtml", newPostVM(p, r))
+	return r.tmpl.ExecuteTemplate(w, "post.gohtml", newPostVM(p))
 }
 
 func (r *PostRenderer) RenderIndex(w io.Writer, p []Post) error {
@@ -48,8 +44,14 @@ type postViewModel struct {
 	HTMLBody template.HTML
 }
 
-func newPostVM(p Post, r *PostRenderer) postViewModel {
+func newParser() *parser.Parser {
+	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
+	return parser.NewWithExtensions(extensions)
+}
+
+func newPostVM(p Post) postViewModel {
 	vm := postViewModel{Post: &p}
-	vm.HTMLBody = template.HTML(markdown.ToHTML([]byte(p.Body), r.mdParser, nil))
+	md := markdown.ToHTML([]byte(p.Body), newParser(), nil)
+	vm.HTMLBody = template.HTML(md)
 	return vm
 }
