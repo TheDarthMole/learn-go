@@ -3,6 +3,7 @@ package poker
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"sort"
 )
@@ -54,6 +55,27 @@ func NewFileSystemPlayerStore(file *os.File) (*FileSystemPlayerStore, error) {
 	}, nil
 }
 
+func FileSystemPlayerStoreFromFile(path string) (ps *FileSystemPlayerStore, closeFunc func(), err error) {
+	db, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		return nil, nil, fmt.Errorf("problem opening %s %v", path, err)
+	}
+
+	closeFunc = func() {
+		err := db.Close()
+		if err != nil {
+			log.Fatalf("error closing database file %s", db.Name())
+		}
+	}
+
+	store, err := NewFileSystemPlayerStore(db)
+
+	if err != nil {
+		return nil, nil, fmt.Errorf("problem creating file system player store, %v", err)
+	}
+	return store, closeFunc, nil
+}
+
 func (f *FileSystemPlayerStore) GetLeague() League {
 	sort.Slice(f.league, func(i, j int) bool {
 		return f.league[i].Wins > f.league[j].Wins
@@ -81,8 +103,5 @@ func (f *FileSystemPlayerStore) RecordWin(name string) error {
 		f.league = append(league, Player{name, 1})
 	}
 
-	if err := f.database.Encode(league); err != nil {
-		return err
-	}
-	return nil
+	return f.database.Encode(f.league)
 }
