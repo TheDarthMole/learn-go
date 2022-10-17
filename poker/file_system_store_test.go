@@ -137,10 +137,10 @@ func TestFileSystemStore(t *testing.T) {
 		player1 := "Nick"
 		player2 := "Luke"
 
-		recordWin(t, store, player1)
-		recordWin(t, store, player1)
-		recordWin(t, store, player1)
-		recordWin(t, store, player2)
+		AssertNoError(t, store.RecordWin(player1))
+		AssertNoError(t, store.RecordWin(player1))
+		AssertNoError(t, store.RecordWin(player1))
+		AssertNoError(t, store.RecordWin(player2))
 
 		newStore, err := NewFileSystemPlayerStore(database)
 		AssertNoError(t, err)
@@ -186,13 +186,4 @@ func createTempFile(t testing.TB, initialData string) (*os.File, func()) {
 	}
 
 	return tempFile, removeFile
-}
-
-func recordWin(t testing.TB, store *FileSystemPlayerStore, name string) {
-	t.Helper()
-
-	err := store.RecordWin(name)
-	if err != nil {
-		t.Errorf("was not expecting error when recording win")
-	}
 }
