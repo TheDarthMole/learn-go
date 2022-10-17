@@ -1,9 +1,12 @@
-package main
+package poker
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"sync"
 	"testing"
 )
@@ -11,6 +14,7 @@ import (
 type StubPlayerStore struct {
 	scores   map[string]int
 	winCalls []string
+	league   League
 }
 
 func (s *StubPlayerStore) GetPlayerScore(name string) int {
@@ -18,8 +22,13 @@ func (s *StubPlayerStore) GetPlayerScore(name string) int {
 	return score
 }
 
-func (s *StubPlayerStore) RecordWin(name string) {
+func (s *StubPlayerStore) RecordWin(name string) error {
 	s.winCalls = append(s.winCalls, name)
+	return nil
+}
+
+func (s *StubPlayerStore) GetLeague() League {
+	return s.league
 }
 
 func TestGetPlayers(t *testing.T) {
@@ -29,6 +38,7 @@ func TestGetPlayers(t *testing.T) {
 			"Floyd":  10,
 		},
 		[]string{},
+		nil,
 	}
 	server := NewPlayerServer(&store)
 	t.Run("returns Pepper's score", func(t *testing.T) {
@@ -59,6 +69,7 @@ func TestGETPlayers(t *testing.T) {
 			"Floyd":  10,
 		},
 		[]string{},
+		nil,
 	}
 	server := NewPlayerServer(&store)
 	t.Run("returns Pepper's score", func(t *testing.T) {
@@ -83,7 +94,7 @@ func TestGETPlayers(t *testing.T) {
 }
 
 func TestStoreWins(t *testing.T) {
-	store := StubPlayerStore{map[string]int{}, []string{}}
+	store := StubPlayerStore{map[string]int{}, []string{}, nil}
 	server := NewPlayerServer(&store)
 
 	t.Run("it records wins when POST", func(t *testing.T) {
@@ -106,7 +117,7 @@ func TestStoreWins(t *testing.T) {
 }
 
 func TestPreventConcurrencyErrors(t *testing.T) {
-	store := StubPlayerStore{map[string]int{}, []string{}}
+	store := StubPlayerStore{map[string]int{}, []string{}, nil}
 	server := NewPlayerServer(&store)
 	iterations := 1000
 
@@ -130,6 +141,59 @@ func TestPreventConcurrencyErrors(t *testing.T) {
 	if len(store.winCalls) != iterations {
 		t.Errorf("got error when multiple concurrent writes, expected %d got %d", iterations, len(store.winCalls))
 	}
+}
+
+// server_test.go
+func TestLeague(t *testing.T) {
+
+	t.Run("it returns the league table as JSON", func(t *testing.T) {
+		wantedLeague := League{
+			{"Cleo", 32},
+			{"Chris", 20},
+			{"Test", 14},
+		}
+
+		store := StubPlayerStore{nil, nil, wantedLeague}
+		server := NewPlayerServer(&store)
+
+		request := newLeagueRequest()
+		response := httptest.NewRecorder()
+
+		server.ServeHTTP(response, request)
+
+		got := getLeagueFromResponse(t, response.Body)
+
+		assertStatus(t, response.Code, http.StatusOK)
+		assertLeague(t, got, wantedLeague)
+		assertContentType(t, response, jsonContentType)
+	})
+}
+
+func assertContentType(t testing.TB, got *httptest.ResponseRecorder, want string) {
+	if got.Result().Header.Get("content-type") != want {
+		t.Errorf("response did not have content-type of %s, got %v", want, got.Result().Header.Get("content-type"))
+	}
+}
+
+func assertLeague(t testing.TB, got, want League) {
+	t.Helper()
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v want %v", got, want)
+	}
+}
+
+func newLeagueRequest() *http.Request {
+	request, _ := http.NewRequest(http.MethodGet, "/league", nil)
+	return request
+}
+
+func getLeagueFromResponse(t testing.TB, body io.Reader) (league League) {
+	t.Helper()
+
+	if err := json.NewDecoder(body).Decode(&league); err != nil {
+		t.Fatalf("unable to parse response from server %q into slice of Player, '%v'", body, err)
+	}
+	return
 }
 
 func newPostWinRequest(name string) *http.Request {
