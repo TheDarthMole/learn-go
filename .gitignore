@@ -1,1 +1,3 @@
 .idea/
+/poker/cmd/cli/cli
+/poker/cmd/cli/game.db.json
