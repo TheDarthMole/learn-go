@@ -9,19 +9,6 @@ import (
 	"strings"
 )
 
-func (cli *CLI) getPlayerCount() int {
-	_, err := fmt.Fprint(cli.out, PlayerPrompt)
-	if err != nil {
-		return 0
-	}
-	noOfPlayers, _ := strconv.Atoi(cli.readLine())
-	//if err != nil {
-	//	fmt.Fprint(cli.out, ErrorPlayerPrompt)
-	//	return cli.getPlayerCount()
-	//}
-	return noOfPlayers
-}
-
 type CLI struct {
 	in   *bufio.Scanner
 	out  io.Writer
