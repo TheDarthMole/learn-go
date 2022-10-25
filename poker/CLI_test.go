@@ -11,8 +11,6 @@ import (
 var (
 	dummyBlindAlerter = &poker.SpyBlindAlerter{}
 	dummyPlayerStore  = &poker.StubPlayerStore{}
-	//dummyStdIn       = &bytes.Buffer{}
-	dummyStdOut = &bytes.Buffer{}
 )
 
 type GameSpy struct {
