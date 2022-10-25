@@ -21,7 +21,7 @@ func StdOutAlerter(duration time.Duration, amount int) {
 	time.AfterFunc(duration, func() {
 		_, err := fmt.Fprintf(os.Stdout, "Blind is now %d\n", amount)
 		if err != nil {
-			log.Fatalf("could not log to stdout")
+			log.Fatalf("could not log to dummyStdOut")
 		}
 	})
 }

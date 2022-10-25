@@ -4,68 +4,82 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
 
-type CLI struct {
-	playerStore PlayerStore
-	in          io.Reader
-	alerter     BlindAlerter
-}
-
-func (cli *CLI) PlayPoker() {
-	cli.scheduleBlindAlerts()
-
-	userInput := cli.readLine()
-
-	switch userInput {
-	case "exit":
-		cli.quit()
-	case "quit":
-		cli.quit()
-	default:
-		err := cli.playerStore.RecordWin(extractWinner(userInput))
-		if err != nil {
-			log.Fatalf("error recording win, %s", err)
-		}
-		fmt.Println(cli.playerStore.GetLeague())
-	}
-
+func (cli *CLI) getPlayerCount() int {
+	fmt.Fprint(cli.out, PlayerPrompt)
+	noOfPlayers, _ := strconv.Atoi(cli.readLine())
+	//if err != nil {
+	//	fmt.Fprint(cli.out, ErrorPlayerPrompt)
+	//	return cli.getPlayerCount()
+	//}
+	return noOfPlayers
 }
 
 func (cli *CLI) quit() {
-	fmt.Printf("Thanks for playing!")
+	fmt.Fprint(cli.out, "Thanks for playing!")
 	os.Exit(0)
 }
 
-func (cli *CLI) readLine() string {
-	reader := bufio.NewScanner(cli.in)
-	fmt.Printf("#> ")
-	reader.Scan()
-	return reader.Text()
-}
-
-func (cli *CLI) scheduleBlindAlerts() {
+func (cli *CLI) scheduleBlindAlerts(noOfPlayers int) {
 	blinds := []int{100, 200, 300, 400, 500, 600, 800, 1000, 2000, 4000, 8000}
 	blindTime := 0 * time.Second
 	for _, blind := range blinds {
-		cli.alerter.ScheduleAlertAt(blindTime, blind)
+		fmt.Println(blind)
+		//cli.alerter.ScheduleAlertAt(blindTime, blind)
 		blindTime += 10 * time.Minute
 	}
 }
 
-func NewCLI(store PlayerStore, in io.Reader, alerter BlindAlerter) *CLI {
+type CLI struct {
+	in   *bufio.Scanner
+	out  io.Writer
+	game Game
+}
+
+func NewCLI(in io.Reader, out io.Writer, game Game) *CLI {
 	return &CLI{
-		playerStore: store,
-		in:          in,
-		alerter:     alerter,
+		in:   bufio.NewScanner(in),
+		out:  out,
+		game: game,
+	}
+}
+
+const (
+	PlayerPrompt         = "Please enter the number of players: "
+	ErrorPlayerPrompt    = "You did not enter a valid integer, try again"
+	WinnerPrompt         = "Please enter the winner: "
+	BadPlayerInputErrMsg = "Incorrect input, please try again"
+)
+
+func (cli *CLI) PlayPoker() {
+	fmt.Fprint(cli.out, PlayerPrompt)
+
+	numberOfPlayersInput := cli.readLine()
+	numberOfPlayers, err := strconv.Atoi(strings.Trim(numberOfPlayersInput, "\n"))
+
+	if err != nil {
+		fmt.Fprint(cli.out, BadPlayerInputErrMsg)
+		return
 	}
 
+	cli.game.Start(numberOfPlayers)
+
+	winnerInput := cli.readLine()
+	winner := extractWinner(winnerInput)
+
+	cli.game.Finish(winner)
 }
 
 func extractWinner(userInput string) string {
 	return strings.Replace(userInput, " wins", "", 1)
+}
+
+func (cli *CLI) readLine() string {
+	cli.in.Scan()
+	return cli.in.Text()
 }
