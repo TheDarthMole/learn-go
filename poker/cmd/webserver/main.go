@@ -16,7 +16,11 @@ func main() {
 		log.Fatalf("error creating file system player store from %s", dbFileName)
 	}
 
-	server := poker.NewPlayerServer(store)
+	server, err := poker.NewPlayerServer(store)
+
+	if err != nil {
+		log.Fatalf("got an error creating player server %q", err)
+	}
 
 	if err = http.ListenAndServe(":5000", server); err != nil {
 		log.Fatalf("could not listen on port 5000 %v", err)

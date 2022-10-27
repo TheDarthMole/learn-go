@@ -2,6 +2,7 @@ package poker
 
 import (
 	"fmt"
+	"io"
 	"net/http/httptest"
 	"reflect"
 	"testing"
@@ -47,10 +48,10 @@ func AssertResponseBody(t testing.TB, got, want string) {
 	}
 }
 
-func AssertStatus(t testing.TB, got, want int) {
+func AssertStatus(t testing.TB, response *httptest.ResponseRecorder, want int) {
 	t.Helper()
-	if got != want {
-		t.Errorf("did not get the correct status, got %d want %d", got, want)
+	if response.Code != want {
+		t.Errorf("did not get the correct status, got %d want %d", response.Code, want)
 	}
 }
 
@@ -94,6 +95,21 @@ type SpyBlindAlerter struct {
 	Alerts []ScheduledAlert
 }
 
-func (s *SpyBlindAlerter) ScheduleAlertAt(at time.Duration, amount int) {
+func (s *SpyBlindAlerter) ScheduleAlertAt(at time.Duration, amount int, to io.Writer) {
 	s.Alerts = append(s.Alerts, ScheduledAlert{at, amount})
+}
+
+type GameSpy struct {
+	StartCalled  bool
+	StartedWith  int
+	FinishedWith string
+}
+
+func (g *GameSpy) Start(numberOfPlayers int, alertsDestination io.Writer) {
+	g.StartCalled = true
+	g.StartedWith = numberOfPlayers
+}
+
+func (g *GameSpy) Finish(winner string) {
+	g.FinishedWith = winner
 }
