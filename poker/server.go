@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"html/template"
-	"log"
+	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -24,10 +25,11 @@ type PlayerStore interface {
 }
 
 type PlayerServer struct {
-	store PlayerStore
-	mu    sync.Mutex
 	http.Handler
 	template *template.Template
+	store    PlayerStore
+	game     Game
+	mu       sync.Mutex
 }
 
 type Player struct {
@@ -35,7 +37,12 @@ type Player struct {
 	Wins int
 }
 
-func NewPlayerServer(store PlayerStore) (*PlayerServer, error) {
+var wsUpgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
+func NewPlayerServer(store PlayerStore, game Game) (*PlayerServer, error) {
 	p := new(PlayerServer)
 
 	tmpl, err := template.ParseFS(templates, "templates/game.html")
@@ -43,6 +50,7 @@ func NewPlayerServer(store PlayerStore) (*PlayerServer, error) {
 		return nil, err
 	}
 
+	p.game = game
 	p.store = store
 	p.template = tmpl
 	p.mu = sync.Mutex{}
@@ -57,23 +65,17 @@ func NewPlayerServer(store PlayerStore) (*PlayerServer, error) {
 }
 
 func (p *PlayerServer) websocketHandler(w http.ResponseWriter, r *http.Request) {
-	upgrader := websocket.Upgrader{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
-	}
+	conn, _ := wsUpgrader.Upgrade(w, r, nil)
 
-	conn, _ := upgrader.Upgrade(w, r, nil)
-	_, winnerMsg, err := conn.ReadMessage()
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	message := string(winnerMsg)
-	err = p.store.RecordWin(message)
-	log.Println(p.store.GetLeague())
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
+	_, numberOfPlayersMsg, _ := conn.ReadMessage()
+	numberOfPlayers, _ := strconv.Atoi(string(numberOfPlayersMsg))
+
+	// TODO Don't discard the blinds messages!
+	p.game.Start(numberOfPlayers, io.Discard)
+
+	_, winnerMsg, _ := conn.ReadMessage()
+	p.game.Finish(string(winnerMsg))
+
 }
 
 func (p *PlayerServer) gameHandler(w http.ResponseWriter, _ *http.Request) {

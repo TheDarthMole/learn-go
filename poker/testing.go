@@ -113,3 +113,18 @@ func (g *GameSpy) Start(numberOfPlayers int, alertsDestination io.Writer) {
 func (g *GameSpy) Finish(winner string) {
 	g.FinishedWith = winner
 }
+
+func AssertGameStartedWith(t testing.TB, game *GameSpy, players int) {
+	t.Helper()
+
+	if game.StartedWith != players {
+		t.Errorf("expected %d players but got %d", game.StartedWith, players)
+	}
+}
+
+func AssertFinishCalledWith(t testing.TB, game *GameSpy, player string) {
+	t.Helper()
+	if game.FinishedWith != player {
+		t.Errorf("expected to finish with %s but got %s", player, game.FinishedWith)
+	}
+}

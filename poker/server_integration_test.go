@@ -11,7 +11,7 @@ func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 	defer cleanDatabase()
 	store, err := NewFileSystemPlayerStore(database)
 	AssertNoError(t, err)
-	server, err := NewPlayerServer(store)
+	server, err := NewPlayerServer(store, dummyGame)
 	AssertNoError(t, err)
 	player := "Pepper"
 

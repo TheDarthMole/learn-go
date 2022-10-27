@@ -15,8 +15,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("error creating file system player store from %s", dbFileName)
 	}
-
-	server, err := poker.NewPlayerServer(store)
+	game := poker.NewTexasHoldem(poker.BlindAlerterFunc(poker.Alerter), store)
+	server, err := poker.NewPlayerServer(store, game)
 
 	if err != nil {
 		log.Fatalf("got an error creating player server %q", err)

@@ -25,3 +25,10 @@ func StdOutAlerter(duration time.Duration, amount int, to io.Writer) {
 		}
 	})
 }
+
+// Alerter will schedule alerts and print them to "to".
+func Alerter(duration time.Duration, amount int, to io.Writer) {
+	time.AfterFunc(duration, func() {
+		_, _ = fmt.Fprintf(to, "Blind is now %d\n", amount)
+	})
+}
